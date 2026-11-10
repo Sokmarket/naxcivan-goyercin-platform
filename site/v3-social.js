@@ -149,7 +149,7 @@
         const username = $("ngUsername")?.value.trim().toLowerCase();
         if (!displayName || !/^[a-z0-9_]{3,30}$/.test(username || "")) throw new Error("İstifadəçi adı 3–30 simvol olmalı; yalnız a-z, 0-9 və _ istifadə edilməlidir.");
         const { data, error } = await client.auth.signUp({
-          email, password, options: { data: { display_name: displayName } }
+          email, password, options: { data: { username, display_name: displayName } }
         });
         if (error) throw error;
         if (data.session && data.user) {

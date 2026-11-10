@@ -12,8 +12,9 @@
 1. Create a new Supabase project.
 2. In Supabase SQL Editor, apply `20261110000000_v3_foundation.sql` first.
 3. Apply `20261110010000_v3_realtime.sql` second.
-4. In `site/supabase-config.js`, set the project URL and the **publishable key** (or legacy anon public key).
-5. Deploy the feature branch after its PR has been reviewed and merged.
+4. Apply `20261110020000_v3_profile_metadata.sql` third to persist the selected signup username.
+5. In `site/supabase-config.js`, set the project URL and the **publishable key** (or legacy anon public key).
+6. Deploy the feature branch after its PR has been reviewed and merged.
 
 The browser key is public by design and is safe only with correct RLS. Never place `service_role`, `sb_secret_...`, database passwords, or other secret keys in browser code or Git.
 
@@ -37,3 +38,7 @@ The existing app shell can remain cached by its Service Worker. Creating account
 - A third user C cannot read the conversation or its messages.
 - Sign out and verify private profile/messages are no longer displayed.
 - Verify no service-role/secret key appears in `site/` or Git history.
+
+## Real-user acceptance
+
+Complete `tests/V3_SUPABASE_REAL_USER_ACCEPTANCE.md` with three independent accounts (A/B/C) before merging or deploying.

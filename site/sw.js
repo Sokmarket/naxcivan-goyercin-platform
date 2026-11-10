@@ -1,5 +1,5 @@
-const CACHE_NAME = "naxcivan-goyercin-pages-v2";
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
+const CACHE_NAME = "naxcivan-goyercin-pages-v3";
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./supabase-config.js", "./v3-social.js"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
