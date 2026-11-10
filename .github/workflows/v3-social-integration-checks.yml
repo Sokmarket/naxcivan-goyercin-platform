@@ -1,0 +1,38 @@
+name: V3 Social Integration checks
+
+on:
+  pull_request:
+    branches: [main, v3-foundation]
+  push:
+    branches: [v3-social-integration]
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate JavaScript syntax
+        run: node --check site/v3-social.js
+      - name: Validate required integration files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s site/supabase-config.js
+          test -s site/v3-social.js
+          test -s supabase/migrations/20261110010000_v3_realtime.sql
+          grep -q "signUp" site/v3-social.js
+          grep -q "signInWithPassword" site/v3-social.js
+          grep -q "from(\"profiles\")" site/v3-social.js
+          grep -q "from(\"posts\")" site/v3-social.js
+          grep -q "from(\"messages\")" site/v3-social.js
+          grep -q "postgres_changes" site/v3-social.js
+          ! grep -R -E "sb_secret_[A-Za-z0-9_-]{10,}|service_role[=: ]+[A-Za-z0-9_-]{20,}" site
+          git diff --check
