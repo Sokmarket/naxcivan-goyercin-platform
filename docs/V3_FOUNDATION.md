@@ -41,8 +41,9 @@ repository/
 2. Göyərçinin təsdiq sahələrini adi istifadəçi dəyişə bilməz; moderator təsdiq qərarını verə bilər, lakin göyərçinin sahiblik və identifikasiya məlumatlarını dəyişə bilməz. Sahib halqa/identifikasiya məlumatını dəyişərsə əvvəlki təsdiq `pending` vəziyyətinə qaytarılır.
 3. Satıcı özü elanını `active` və ya `removed` statusuna keçirə bilməz; moderator/admin statusu idarə edə bilər, moderator elan məzmununu və qiyməti dəyişə bilməz.
 4. Mesajlar yalnız söhbət iştirakçılarına açıqdır.
-5. `public-media` bucket ictimai media üçündür. Yükləmə yolu `public-media/<auth.uid()>/...` olmalıdır. Şəxsi sənədlər və həssas baytarlıq qeydləri bu bucket-ə yüklənməməlidir.
-6. SQL faylı demo istifadəçi, göyərçin, paylaşım və ya elan yaratmır.
+5. `public-media` bucket yalnız ictimai paylaşımlar, profil şəkilləri, göyərçin və elan media faylları üçündür. Bucket adı ayrıca seçilir; obyekt açarı `<auth.uid()>/...` formatındadır. Şəxsi sənədlər və həssas baytarlıq qeydləri bu bucket-ə yüklənməməlidir.
+6. Şəxsi yazışma əlavələri ayrıca, public olmayan `private-message-media` bucket-ində saxlanılır. Obyekt açarı `<conversation_uuid>/<auth.uid()>/<filename>` formatındadır; oxuma yalnız həmin söhbətin iştirakçılarına açıqdır.
+7. SQL faylı demo istifadəçi, göyərçin, paylaşım və ya elan yaratmır.
 
 ## Vacib yoxlama qeydi
 

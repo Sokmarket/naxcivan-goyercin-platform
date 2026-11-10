@@ -239,6 +239,22 @@ begin
 end;
 $$;
 
+-- Message ownership and conversation membership cannot be changed by an edit.
+create or replace function private.protect_message_identity()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.id := old.id;
+  new.conversation_id := old.conversation_id;
+  new.sender_id := old.sender_id;
+  new.kind := old.kind;
+  new.created_at := old.created_at;
+  return new;
+end;
+$$;
+
 create or replace function private.protect_report_identity()
 returns trigger
 language plpgsql
@@ -606,6 +622,10 @@ drop trigger if exists conversations_updated_at on public.conversations;
 create trigger conversations_updated_at before update on public.conversations
 for each row execute function private.set_updated_at();
 
+drop trigger if exists messages_identity_guard on public.messages;
+create trigger messages_identity_guard before update on public.messages
+for each row execute function private.protect_message_identity();
+
 drop trigger if exists messages_updated_at on public.messages;
 create trigger messages_updated_at before update on public.messages
 for each row execute function private.set_updated_at();
@@ -772,8 +792,17 @@ with check (
 );
 create policy comments_update_own_or_admin on public.comments
 for update to authenticated
-using (author_id = (select auth.uid()) or public.current_user_has_role('admin'))
-with check (author_id = (select auth.uid()) or public.current_user_has_role('admin'));
+using (
+  author_id = (select auth.uid())
+  or public.current_user_has_role('admin')
+)
+with check (
+  (
+    author_id = (select auth.uid())
+    and exists (select 1 from public.posts p where p.id = post_id)
+  )
+  or public.current_user_has_role('admin')
+);
 create policy comments_delete_own_or_moderator on public.comments
 for delete to authenticated
 using (
@@ -1102,9 +1131,9 @@ grant usage, select on all sequences in schema public to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Public media bucket. Public reads are intentional for public social content.
--- Uploads/changes are restricted to a user's own first-level folder:
--- public-media/<auth.uid()>/...
--- Do not upload private documents or sensitive veterinary records here.
+-- The bucket is named public-media; the object key starts with <auth.uid()>.
+-- Do not upload private documents, chat attachments, or sensitive veterinary
+-- records here.
 -- ---------------------------------------------------------------------------
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -1115,10 +1144,7 @@ values (
   104857600,
   array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']
 )
-on conflict (id) do update
-set public = excluded.public,
-    file_size_limit = excluded.file_size_limit,
-    allowed_mime_types = excluded.allowed_mime_types;
+on conflict (id) do nothing;
 
 drop policy if exists public_media_insert_own_folder on storage.objects;
 create policy public_media_insert_own_folder on storage.objects
@@ -1155,6 +1181,66 @@ using (
     (storage.foldername(name))[1] = (select auth.uid())::text
     or public.current_user_has_role('admin')
   )
+);
+
+-- ---------------------------------------------------------------------------
+-- Private message media. Object key:
+-- <conversation_uuid>/<uploader_auth_uid>/<filename>
+-- Only authenticated conversation members can read attachments. Upload,
+-- update, and delete are restricted to the uploader's own folder.
+-- ---------------------------------------------------------------------------
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'private-message-media',
+  'private-message-media',
+  false,
+  52428800,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']
+)
+on conflict (id) do update
+set public = false,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists private_message_media_select_member on storage.objects;
+create policy private_message_media_select_member on storage.objects
+for select to authenticated
+using (
+  bucket_id = 'private-message-media'
+  and public.is_conversation_member(((storage.foldername(name))[1])::uuid)
+);
+
+drop policy if exists private_message_media_insert_member_own_folder on storage.objects;
+create policy private_message_media_insert_member_own_folder on storage.objects
+for insert to authenticated
+with check (
+  bucket_id = 'private-message-media'
+  and (storage.foldername(name))[2] = (select auth.uid())::text
+  and public.is_conversation_member(((storage.foldername(name))[1])::uuid)
+);
+
+drop policy if exists private_message_media_update_member_own_folder on storage.objects;
+create policy private_message_media_update_member_own_folder on storage.objects
+for update to authenticated
+using (
+  bucket_id = 'private-message-media'
+  and (storage.foldername(name))[2] = (select auth.uid())::text
+  and public.is_conversation_member(((storage.foldername(name))[1])::uuid)
+)
+with check (
+  bucket_id = 'private-message-media'
+  and (storage.foldername(name))[2] = (select auth.uid())::text
+  and public.is_conversation_member(((storage.foldername(name))[1])::uuid)
+);
+
+drop policy if exists private_message_media_delete_member_own_folder on storage.objects;
+create policy private_message_media_delete_member_own_folder on storage.objects
+for delete to authenticated
+using (
+  bucket_id = 'private-message-media'
+  and (storage.foldername(name))[2] = (select auth.uid())::text
+  and public.is_conversation_member(((storage.foldername(name))[1])::uuid)
 );
 
 commit;
