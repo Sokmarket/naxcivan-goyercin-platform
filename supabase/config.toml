@@ -1,0 +1,3 @@
+# Minimal Supabase CLI project configuration.
+# Run `supabase init` only if you want the full generated local-dev config.
+project_id = "naxcivan-goyercin-platform"
