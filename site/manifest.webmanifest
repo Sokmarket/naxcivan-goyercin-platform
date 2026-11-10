@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Naxçıvan Göyərçin — Sosial Platforma və Bazar",
+  "short_name": "Göyərçin",
+  "description": "Göyərçin icması, elan bazarı və baytarlıq xidmətləri platforması.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0A0E14",
+  "theme_color": "#19C7C7",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
